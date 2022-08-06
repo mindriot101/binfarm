@@ -11,18 +11,24 @@ struct BinaryDefinition {
     path: String,
 }
 
-fn is_cli_from_manifest(manifest: Manifest) -> bool {
+fn is_cli_from_manifest(manifest: Manifest, files: &[&str]) -> bool {
+    // explicit binaries
     if let Some(bin_definitions) = manifest.binaries {
-        return bin_definitions.len() > 0;
+        return !bin_definitions.is_empty();
+    }
+
+    // source directory has main.rs
+    if files.contains(&"src/main.rs") {
+        return true;
     }
 
     false
 }
 
-fn is_cli(contents: impl AsRef<str>) -> bool {
+fn is_cli(contents: impl AsRef<str>, files: &[&str]) -> bool {
     let manifest: Manifest =
         toml::from_str(contents.as_ref()).expect("invalid manifest - could not parse toml");
-    is_cli_from_manifest(manifest)
+    is_cli_from_manifest(manifest, files)
 }
 
 #[cfg(test)]
@@ -39,7 +45,7 @@ name = "something"
 path = "src/bin/foo.rs"
 "#;
 
-        assert!(is_cli(contents));
+        assert!(is_cli(contents, &[]));
     }
 
     #[test]
@@ -48,6 +54,15 @@ path = "src/bin/foo.rs"
 name = "test"
 "#;
 
-        assert!(!is_cli(contents));
+        assert!(!is_cli(contents, &[]));
+    }
+
+    #[test]
+    fn has_main_rs() {
+        let contents = r#"[package]
+name = "test"
+"#;
+
+        assert!(is_cli(contents, &["src/main.rs"]));
     }
 }
