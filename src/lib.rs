@@ -22,6 +22,13 @@ fn is_cli_from_manifest(manifest: Manifest, files: &[&str]) -> bool {
         return true;
     }
 
+    // source directory has bin subdir
+    for path in files {
+        if path.starts_with("src/bin/") {
+            return true;
+        }
+    }
+
     false
 }
 
@@ -64,5 +71,14 @@ name = "test"
 "#;
 
         assert!(is_cli(contents, &["src/main.rs"]));
+    }
+
+    #[test]
+    fn has_bin_subfolder() {
+        let contents = r#"[package]
+name = "test"
+"#;
+
+        assert!(is_cli(contents, &["src/lib.rs", "src/bin/foo.rs"]));
     }
 }
